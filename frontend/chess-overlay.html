@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Rating Overlay</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .overlay-container {
+            width: 380px;
+            background-color: #111827;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            color: white;
+            border: 1px solid #374151;
+            transform: translateY(100px); /* Start from below */
+            opacity: 0;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            position: relative;
+        }
+        
+        .overlay-container.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .overlay-header {
+            background: linear-gradient(to right, #5b21b6, #3b82f6);
+            padding: 16px;
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+        }
+        
+        .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            margin-right: 15px;
+        }
+        
+        .avatar svg {
+            width: 32px;
+            height: 32px;
+            color: #111827;
+        }
+        
+        .username {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .subtitle {
+            font-size: 12px;
+            color: #93c5fd;
+        }
+        
+        /* Animated gradient divider */
+        .gradient-divider {
+            height: 3px;
+            background: linear-gradient(90deg, #ff4d4d, #f9cb28, #4ff772, #38b6ff, #a372f9);
+            background-size: 400% 400%;
+            animation: gradientAnimation 6s ease infinite;
+        }
+        
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+        
+        .ratings-container {
+            padding: 16px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .platform-box {
+            background-color: #1f2937;
+            border-radius: 8px;
+            padding: 12px;
+        }
+        
+        .platform-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .platform-logo {
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+        }
+        
+        .platform-name {
+            font-size: 12px;
+            font-weight: 500;
+            color: #9ca3af;
+            text-transform: uppercase;
+        }
+        
+        .ratings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .rating-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 8px 10px;
+        }
+        
+        .rating-type {
+            font-size: 14px;
+            color: #d1d5db;
+        }
+        
+        .rating-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .not-found {
+            font-style: italic;
+            color: #9ca3af;
+            text-align: center;
+            padding: 15px 0;
+        }
+        
+        /* Matching colors for time controls across platforms */
+        .lichess-colors .rating-item.rapid,
+        .chesscom-colors .rating-item.rapid {
+            border-left: 3px solid #4ade80; /* Green */
+        }
+        
+        .lichess-colors .rating-item.blitz,
+        .chesscom-colors .rating-item.blitz {
+            border-left: 3px solid #3b82f6; /* Blue */
+        }
+        
+        .lichess-colors .rating-item.bullet,
+        .chesscom-colors .rating-item.bullet {
+            border-left: 3px solid #f43f5e; /* Red */
+        }
+        
+        /* Animation for when ratings appear */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .rating-item {
+            animation: fadeInUp 0.4s ease-out forwards;
+            opacity: 0;
+        }
+        
+        .rating-item:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+        
+        .rating-item:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .rating-item:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay-container" id="overlay">
+        <div class="overlay-header">
+            <div class="header-content">
+                <div class="avatar">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <div class="username" id="username">Username</div>
+                    <div class="subtitle">Chess Ratings</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Animated gradient divider -->
+        <div class="gradient-divider"></div>
+        
+        <div class="ratings-container">
+            <div class="grid">
+                <!-- Lichess Section -->
+                <div class="platform-box lichess" id="lichessSection">
+                    <div class="platform-header">
+                        <img class="platform-logo" src="/static/images/lichess-svgrepo-com.svg" alt="Lichess">
+                        <span class="platform-name">LICHESS</span>
+                    </div>
+                    
+                    <div class="ratings-list lichess-colors" id="lichessRatings">
+                        <div class="not-found">Loading...</div>
+                    </div>
+                </div>
+                
+                <!-- Chess.com Section -->
+                <div class="platform-box chesscom" id="chesscomSection">
+                    <div class="platform-header">
+                        <img class="platform-logo" src="/static/images/icons8-chess-com.svg" alt="Chess.com">
+                        <span class="platform-name">CHESS.COM</span>
+                    </div>
+                    
+                    <div class="ratings-list chesscom-colors" id="chesscomRatings">
+                        <div class="not-found">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to update overlay with player data
+        function showPlayerRatings(data) {
+            const overlay = document.getElementById('overlay');
+            const username = document.getElementById('username');
+            const lichessSection = document.getElementById('lichessSection');
+            const chesscomSection = document.getElementById('chesscomSection');
+            const lichessRatings = document.getElementById('lichessRatings');
+            const chesscomRatings = document.getElementById('chesscomRatings');
+            
+            // Clear any existing hide timeout
+            if (window.hideTimeout) {
+                clearTimeout(window.hideTimeout);
+            }
+            
+            // Update username
+            username.textContent = data.username;
+            
+            // Handle Lichess data
+            if (data.lichess && data.lichess.found) {
+                let lichessHtml = '';
+                
+                if (data.lichess.rapid) {
+                    lichessHtml += `
+                        <div class="rating-item rapid">
+                            <span class="rating-type">Rapid</span>
+                            <span class="rating-value">${data.lichess.rapid}</span>
+                        </div>
+                    `;
+                }
+                
+                if (data.lichess.blitz) {
+                    lichessHtml += `
+                        <div class="rating-item blitz">
+                            <span class="rating-type">Blitz</span>
+                            <span class="rating-value">${data.lichess.blitz}</span>
+                        </div>
+                    `;
+                }
+                
+                if (data.lichess.bullet) {
+                    lichessHtml += `
+                        <div class="rating-item bullet">
+                            <span class="rating-type">Bullet</span>
+                            <span class="rating-value">${data.lichess.bullet}</span>
+                        </div>
+                    `;
+                }
+                
+                if (lichessHtml) {
+                    lichessRatings.innerHTML = lichessHtml;
+                    lichessSection.style.display = 'block';
+                } else {
+                    lichessRatings.innerHTML = '<div class="not-found">No rated games</div>';
+                    lichessSection.style.display = 'block';
+                }
+            } else {
+                lichessSection.style.display = 'none';
+            }
+            
+            // Handle Chess.com data
+            if (data.chesscom && data.chesscom.found) {
+                let chesscomHtml = '';
+                
+                if (data.chesscom.rapid) {
+                    chesscomHtml += `
+                        <div class="rating-item rapid">
+                            <span class="rating-type">Rapid</span>
+                            <span class="rating-value">${data.chesscom.rapid}</span>
+                        </div>
+                    `;
+                }
+                
+                if (data.chesscom.blitz) {
+                    chesscomHtml += `
+                        <div class="rating-item blitz">
+                            <span class="rating-type">Blitz</span>
+                            <span class="rating-value">${data.chesscom.blitz}</span>
+                        </div>
+                    `;
+                }
+                
+                if (data.chesscom.bullet) {
+                    chesscomHtml += `
+                        <div class="rating-item bullet">
+                            <span class="rating-type">Bullet</span>
+                            <span class="rating-value">${data.chesscom.bullet}</span>
+                        </div>
+                    `;
+                }
+                
+                if (chesscomHtml) {
+                    chesscomRatings.innerHTML = chesscomHtml;
+                    chesscomSection.style.display = 'block';
+                } else {
+                    chesscomRatings.innerHTML = '<div class="not-found">No rated games</div>';
+                    chesscomSection.style.display = 'block';
+                }
+            } else {
+                chesscomSection.style.display = 'none';
+            }
+            
+            // Adjust layout if only one platform is available
+            const hasLichess = data.lichess && data.lichess.found;
+            const hasChesscom = data.chesscom && data.chesscom.found;
+            
+            if (hasLichess && !hasChesscom) {
+                lichessSection.style.gridColumn = '1 / span 2';
+            } else {
+                lichessSection.style.gridColumn = '';
+            }
+            
+            if (hasChesscom && !hasLichess) {
+                chesscomSection.style.gridColumn = '1 / span 2';
+            } else {
+                chesscomSection.style.gridColumn = '';
+            }
+            
+            // If no data found for either platform, don't show overlay
+            if (!hasLichess && !hasChesscom) {
+                return;
+            }
+            
+            // Show the overlay
+            overlay.classList.add('show');
+            
+            // Auto-hide after 10 seconds
+            window.hideTimeout = setTimeout(() => {
+                overlay.classList.remove('show');
+            }, 10000);
+        }
+        
+        // Message queue for handling multiple commands
+        let messageQueue = [];
+        let processingMessage = false;
+        
+        function processQueue() {
+            if (processingMessage || messageQueue.length === 0) {
+                return;
+            }
+            
+            processingMessage = true;
+            const data = messageQueue.shift();
+            
+            // Only process if we have valid data to show
+            const hasLichessData = data.lichess && data.lichess.found;
+            const hasChesscomData = data.chesscom && data.chesscom.found;
+            
+            if (hasLichessData || hasChesscomData) {
+                showPlayerRatings(data);
+                
+                // After overlay is hidden, process next message if any
+                window.hideTimeout = setTimeout(() => {
+                    const overlay = document.getElementById('overlay');
+                    overlay.classList.remove('show');
+                    
+                    // Wait for animation to complete
+                    setTimeout(() => {
+                        processingMessage = false;
+                        processQueue();
+                    }, 500); // Match transition time
+                }, 10000);
+            } else {
+                // No data to show, move to next message
+                processingMessage = false;
+                processQueue();
+            }
+        }
+        
+        // WebSocket Connection
+        const connectWebSocket = () => {
+            const socket = new WebSocket('ws://localhost:8080/ws');
+            
+            socket.onopen = () => {
+                console.log('Connected to WebSocket server');
+            };
+            
+            socket.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    
+                    if (message.type === 'chess_rating') {
+                        // Add message to queue
+                        messageQueue.push(message.data);
+                        processQueue();
+                    }
+                } catch (error) {
+                    console.error('Error processing message:', error);
+                }
+            };
+            
+            socket.onclose = () => {
+                console.log('Disconnected from WebSocket server. Reconnecting in 5 seconds...');
+                setTimeout(connectWebSocket, 5000);
+            };
+            
+            socket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                socket.close();
+            };
+        };
+        
+        // Start WebSocket connection when page loads
+        window.addEventListener('load', connectWebSocket);
+        
+        // For testing - uncomment to test with sample data
+        /*
+        setTimeout(() => {
+            showPlayerRatings({
+                username: "MagnusCarlsen",
+                lichess: {
+                    found: true,
+                    rapid: 2850,
+                    blitz: 2920,
+                    bullet: 3100
+                },
+                chesscom: {
+                    found: true,
+                    rapid: 2823,
+                    blitz: 2886,
+                    bullet: 3245
+                }
+            });
+        }, 1000);
+        */
+    </script>
+</body>
+</html>
