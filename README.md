@@ -14,17 +14,30 @@ A real-time Twitch integration tool that listens for channel point redemptions a
 
 ```
 twitch-tool/
-├── src/                      # Source code
+├── src/ 
+│   ├──　api/      
+│   │   ├── middleware.ts
+│   │   ├── routes.ts
+│   │   └── server.ts
+│   ├──　auth/                 # Twitch Authentication
+│   │   └── twitch.ts
+│   ├──　chat/                 # Chatbot setup
+│   │   ├── commands/
+│   │   │   ├── chess.ts
+│   │   │   └── mod.ts
+│   │   ├── bot.ts
+│   │   └── events.ts
 │   ├── config/               # Configuration
-│   │   └── config.ts         # Configuration interface and loading
+│   │   └── config.ts         
 │   ├── eventsub/             # Twitch EventSub integration
-│   │   └── handler.ts        # EventSub handler for Twitch events
+│   │   ├── handler.ts        
+│   │   └── setup.ts          
 │   ├── websocket/            # WebSocket server
-│   │   └── server.ts         # WebSocket server implementation
+│   │   └── server.ts         
 │   ├── utils/                # Utility functions
-│   │   └── utils.ts          # Logging and other utilities
-│   ├── app.ts                # Main application entry point
-│   └── test-eventsub.ts      # Test script for EventSub
+│   │   ├── context.ts
+│   │   └── utils.ts          
+│   └── app.ts                # Main application entry point
 ├── .env                      # Environment variables (not in repo)
 ├── deno.json                 # Deno configuration
 └── README.md                 # Project documentation
