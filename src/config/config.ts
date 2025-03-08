@@ -20,6 +20,7 @@ export interface Config {
   refreshToken: string;
 
   // EventSub config
+  ngrokAuthToken: string;
   eventSubSecret: string;
 
   // Chat bot config
@@ -66,6 +67,7 @@ export async function initConfig(): Promise<Config> {
       accessToken: Deno.env.get("TWITCH_ACCESS_TOKEN") || "",
       refreshToken: Deno.env.get("TWITCH_REFRESH_TOKEN") || "",
 
+      ngrokAuthToken: Deno.env.get("NGROK_AUTH_TOKEN") || "",
       eventSubSecret: Deno.env.get("EVENTSUB_SECRET") || crypto.randomUUID(),
 
       botPrefix: Deno.env.get("BOT_PREFIX") || "!",
@@ -87,6 +89,7 @@ export async function initConfig(): Promise<Config> {
       accessToken: "***REDACTED***",
       refreshToken: "***REDACTED***",
       eventSubSecret: "***REDACTED***",
+      ngrokAuthToken: "***REDACTED***",
     };
 
     logger.debug(`Initialised config: ${JSON.stringify(safeConfig, null, 2)}`);

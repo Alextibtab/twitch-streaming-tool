@@ -4,8 +4,11 @@ import type { Config } from "../config/config.ts";
 import { TwitchAuthManager } from "../auth/twitch.ts";
 import { loadCommands } from "./commands/mod.ts";
 import { registerEventHandlers } from "./events.ts";
+import { ServiceLocator } from "../utils/context.ts";
 
 import { logError } from "../utils/utils.ts";
+import { WebSocketServerInterface } from "../websocket/server.ts";
+import { WebSocketMessage } from "../websocket/server.ts";
 
 const logger = getLogger();
 
@@ -135,7 +138,9 @@ export class TwitchChatBot {
         
         if (command) {
           logger.info(`Executing command: ${commandName} from ${user}`);
-          
+
+          const args = text.split(" ").slice(1).join(" ");
+          this.broadcastCommandExecution(commandName, user, args);
           const response = await command(message);
           
           if (response) {
@@ -167,6 +172,30 @@ export class TwitchChatBot {
       logger.info(`Registered ${this.commands.size} bot commands`);
     } catch (error) {
       logError(logger, 'Failed to register commands', error);
+    }
+  }
+
+  private broadcastCommandExecution(command: string, user: string, args: string): void {
+    try {
+      const wsServer: WebSocketServerInterface = ServiceLocator.getInstance().get('wsServer');
+
+      if (wsServer) {
+        const commandMessage: WebSocketMessage = {
+          type: 'command',
+          data: {
+            command: command,
+            user: user,
+            args: args || null,
+            timestamp: new Date().toISOString()
+          }
+        }        
+
+        wsServer.broadcast(commandMessage);
+      };
+
+      logger.debug(`Broadcasted command execution: ${command} by ${user}`)
+    } catch (error) {
+      logError(logger, 'Failed to broadcast command execution', error);
     }
   }
  

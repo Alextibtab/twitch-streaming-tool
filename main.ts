@@ -12,11 +12,11 @@ import { logError } from "./src/utils/utils.ts";
 
 setup({
   handlers: {
-    console: new ConsoleHandler("INFO"),
+    console: new ConsoleHandler("ERROR"),
   },
   loggers: {
     default: {
-      level: "INFO",
+      level: "ERROR",
       handlers: ["console"],
     },
   },
@@ -24,17 +24,36 @@ setup({
 
 const logger = getLogger();
 
-try {
+async function startApplication() {
   const config = await initConfig();
   const { app, router } = await setupServer(config);
   const wss = await initWebSocketServer(app, config.wsPort);
 
-  ServiceLocator.getInstance().register('wsServer', wss);
+  // Initialize core services
+  const serviceLocator = ServiceLocator.getInstance();
+  serviceLocator.register('wsServer', wss);
 
   await startChatBot(config);
   await setupEventSub(config, router, wss);
 
-  await new Promise(() => {});
+  logger.info("Application successfully started! 🚀");
+
+
+  const signals = ["SIGINT", "SIGTERM"];
+  // Keep the application running
+  return new Promise((resolve) => {
+    for (const signal of signals) {
+      Deno.addSignalListener(signal, () => {
+        logger.info(`Received ${signal}, shutting down...`);
+        resolve(1);
+      });
+    }
+  });
+}
+
+try {
+  await startApplication();
+  Deno.exit(0);
 } catch (error) {
   logError(logger, 'Failed to start application', error);
   Deno.exit(1);

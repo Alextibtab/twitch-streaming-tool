@@ -92,6 +92,7 @@ async function handleRatingCommand(username: string): Promise<string> {
       let lichessData: LichessUserData | null = null;
 
       if (lichessCache && now - lichessCache?.timestamp < CACHE_DURATION) {
+        logger.info("using lichess cache");
         lichessData = lichessCache.data;
       } else {
         const response = await fetch(`https://lichess.org/api/user/${encodeURIComponent(username)}`);
@@ -105,7 +106,7 @@ async function handleRatingCommand(username: string): Promise<string> {
       }
 
       if (lichessData) {
-        results.push(formatLichessRating(username, lichessData));
+        results.push(formatLichessRating(lichessData));
 
         overlayData.lichess = {
           found: true,
@@ -141,6 +142,7 @@ async function handleRatingCommand(username: string): Promise<string> {
       let statsData: ChessComStatsData | null = null;
 
       if (statsCache && now - statsCache.timestamp < CACHE_DURATION) {
+        logger.info("Chess[.]com cache used");
         statsData = statsCache.data;
       } else if (profileData) {
         const statsResponse = await fetch(`https://api.chess.com/pub/player/${encodeURIComponent(username)}/stats`);
@@ -152,7 +154,7 @@ async function handleRatingCommand(username: string): Promise<string> {
       }
       
       if (profileData && statsData) {
-        results.push(formatChessComRating(username, statsData));
+        results.push(formatChessComRating(statsData));
 
         overlayData.chesscom = {
           found: true,
@@ -165,7 +167,7 @@ async function handleRatingCommand(username: string): Promise<string> {
         overlayData.chesscom = { found: false };
       }
     } catch (error) {
-      logError(logger, 'Error fetching chessdotcom data', error);
+      logError(logger, 'Error fetching chess[.]com data', error);
       overlayData.chesscom = { found: false };
     }
 
@@ -180,13 +182,13 @@ async function handleRatingCommand(username: string): Promise<string> {
     }
 
     if (results.length > 0) {
-      return results.join(" | ");
+      return `${username} - ${results.join(" | ")}`;
     } else {
-      return `@${username} not found on Lichess or Chessdotcom. Make sure the username is correct.`;
+      return `${username} not found on Lichess or Chess[.]com. Make sure the username is correct.`;
     }
   } catch (error) {
     logError(logger, 'Error in handleRatingCommand', error);
-    return `Sorry, couldn't retrieve ratings for @${username}. Please try again later.`;
+    return `Sorry, couldn't retrieve ratings for ${username}. Please try again later.`;
   }
 }
 

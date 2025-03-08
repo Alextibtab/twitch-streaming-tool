@@ -52,11 +52,39 @@
     .log-entry.error {
       color: #dc3545; /* Red for errors */
     }
+
+    .log-entry.command {
+      background-color: rgba(100, 65, 165, 0.2);
+      border-left: 3px solid #6441a5;
+      font-weight: bold;
+    }
+
+    .command-message {
+      color: #6441a5;
+    }
     
     .simulation {
       background: #e9ecef;
       padding: 16px;
       border-radius: 6px;
+    }
+
+    #event-log {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    #sim-command {
+      background-color: #6441a5;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #sim-command:hover {
+      background-color: #7d5bbe;
     }
     
     button {
@@ -97,6 +125,7 @@
       <button id="sim-glitch">Glitch Shader</button>
       <button id="sim-camera">Camera Angle</button>
       <button id="sim-color">Color Shift</button>
+      <button id="sim-command">Simulate Command</button>
     </div>
   </div>
   

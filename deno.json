@@ -20,6 +20,7 @@
     "@twurple/chat": "npm:@twurple/chat@^7.2.1",
     "@twurple/eventsub-base": "npm:@twurple/eventsub-base@^7.2.1",
     "@twurple/eventsub-http": "npm:@twurple/eventsub-http@^7.2.1",
+    "@twurple/eventsub-ngrok": "npm:@twurple/eventsub-ngrok@^7.2.1",
     "@types/node": "npm:@types/node@^22.13.5"
   },
   "compilerOptions": {

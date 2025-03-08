@@ -27,6 +27,10 @@ document.getElementById('sim-color').addEventListener('click', () => {
   logEvent('Simulated color shift effect', 'effect');
 });
 
+document.getElementById('sim-command').addEventListener('click', () => {
+  logEvent('Simulated command: !effect by TestUser with args: glitch', 'command');
+});
+
 // Initial setup
 drawPlaceholder();
 
@@ -37,11 +41,8 @@ function connectWebSocket() {
     return;
   }
   
-  // Connect to the separate WebSocket port
-  const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}/${window.location.hostname}:8080/ws`;
-  
   try {
-    socket = new WebSocket(wsUrl);
+    socket = new WebSocket('ws://localhost:8080/ws');
     
     socket.onopen = () => {
       statusElement.textContent = 'Connected';
@@ -79,8 +80,6 @@ function disconnectWebSocket() {
 
 // Handle WebSocket messages
 function handleWebSocketMessage(message) {
-  logEvent(`Received ${message.type} event: ${JSON.stringify(message.data)}`, message.type);
-  
   switch (message.type) {
     case 'shader':
       applyEffect('shader', message.data);
@@ -91,6 +90,10 @@ function handleWebSocketMessage(message) {
     case 'color':
       applyEffect('color', message.data);
       break;
+    case 'command':
+      // Handle chatbot commands
+      logEvent(`Command: ${message.data.command} by ${message.data.user}${message.data.args ? ' with args: ' + message.data.args: '' }`, 'command');
+      break;
   }
 }
 
@@ -98,10 +101,30 @@ function handleWebSocketMessage(message) {
 function logEvent(message, type = 'info') {
   const entry = document.createElement('div');
   entry.className = `log-entry ${type}`;
-  entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+
+  const timestamp = `[${new Date().toLocaleTimeString()}]`;
   
+  if (type === 'command') {
+    const timestampSpan = document.createElement('span');
+    timestampSpan.className = 'timestamp';
+    timestampSpan.textContent = timestamp + ' ';
+
+    const messageSpan = document.createElement('span');
+    messageSpan.className = 'command-message';
+    messageSpan.textContent = message;
+
+    entry.appendChild(timestampSpan);
+    entry.appendChild(messageSpan);
+  } else {
+    entry.textContent = `${timestamp} ${message}`;
+  }
+
   logElement.appendChild(entry);
   logElement.scrollTop = logElement.scrollHeight;
+
+  while (logElement.children.length > 100) {
+    logElement.removeChild(logElement.firstChild);
+  }
 }
 
 // Apply visual effects to the preview

@@ -27,6 +27,7 @@
     "npm:@twurple/chat@^7.2.1": "7.2.1_@twurple+auth@7.2.1",
     "npm:@twurple/eventsub-base@^7.2.1": "7.2.1_@twurple+auth@7.2.1",
     "npm:@twurple/eventsub-http@^7.2.1": "7.2.1_@twurple+api@7.2.1__@twurple+auth@7.2.1_@twurple+auth@7.2.1",
+    "npm:@twurple/eventsub-ngrok@^7.2.1": "7.2.1_@twurple+api@7.2.1__@twurple+auth@7.2.1_@twurple+eventsub-http@7.2.1__@twurple+api@7.2.1___@twurple+auth@7.2.1__@twurple+auth@7.2.1_@twurple+auth@7.2.1",
     "npm:@types/node@^22.13.5": "22.13.5",
     "npm:path-to-regexp@^6.3.0": "6.3.0",
     "npm:ws@*": "8.18.1",
@@ -194,6 +195,63 @@
         "tslib"
       ]
     },
+    "@ngrok/ngrok-android-arm-eabi@0.5.2": {
+      "integrity": "sha512-O8/qxTrtwvOLafnp2dRK2Jjbj7xf7bwTinXiAoEf8Y+/24p3EDCzMqcyFkJS3NuBQU/TiWloER5qCmOK/aX/UQ=="
+    },
+    "@ngrok/ngrok-android-arm64@0.5.2": {
+      "integrity": "sha512-SFFlxHKCHqcJPD/nKzJGibXAtQDWy+R5VuCakvzPmWKer47QQ1B/2kLy7ua4tFEmARGHYWOHGZHzP7mkq73oMA=="
+    },
+    "@ngrok/ngrok-darwin-arm64@0.5.2": {
+      "integrity": "sha512-6OcddF5wioQIuawXh1ONxmIywP5GskVT7H4MeKp5BjN2s9sIr7zhy7JBkwfAXFvNJtqw1dasV6JbYeGWXYCBnQ=="
+    },
+    "@ngrok/ngrok-darwin-universal@0.5.2": {
+      "integrity": "sha512-g3Q8qn5Z62m/z9zNxDGCMYVOgMBCXbZmNVpsfmhSBze5Rp1a1mUtloem8FvBeS9LyZYbXpbUbpeo2eJvZjF6Qg=="
+    },
+    "@ngrok/ngrok-darwin-x64@0.5.2": {
+      "integrity": "sha512-/s+R2qGbkYUrzXkNBsrdpftGj80ZTnIzHVsvPsOhnSU0rOcWJ/+/MN/Be0f8AXw7uHBRr+i7smVYW9sSIfroKw=="
+    },
+    "@ngrok/ngrok-freebsd-x64@0.5.2": {
+      "integrity": "sha512-D2TVtW6ug8pFFR6Yrq/Q4XvYslIvQFbouSNyy7wvsZ/ZqSHwXR8XU3rG9D2+QnMG4qRS0DpUcf3qLQPWdWJAVw=="
+    },
+    "@ngrok/ngrok-linux-arm-gnueabihf@0.5.2": {
+      "integrity": "sha512-3euA0sbSI6+AX8qrpjgpJSjW16IKnFjLtzN9DZo/QLajc237Vq1gc1/8GWD/zI1zT+zquIFR9clq0SRRwO83pQ=="
+    },
+    "@ngrok/ngrok-linux-arm64-gnu@0.5.2": {
+      "integrity": "sha512-O5nEuB2wIG6IoX6bon7vAnhCqbC54bPfkul5wsNA9+A17GkmsFVwpKs0wI0a2OoskmyG2DRKo9DSXS+AwsJ6Xg=="
+    },
+    "@ngrok/ngrok-linux-arm64-musl@0.5.2": {
+      "integrity": "sha512-BryCXIGzaA3YPJ3OgSbOX3VHlDm7c7tj1dYI3PfQyI2Od7HC1uRUv4FRZgwl+OjY/AckXFm02oV1H6ho+iJqgA=="
+    },
+    "@ngrok/ngrok-linux-x64-gnu@0.5.2": {
+      "integrity": "sha512-6S4m4Tqbf4vxFAFY7b9U2NuhujxcHKWR3lR4Na9aLWR9VBg2E/3Qa0nTvfWk+SGBilU03QELKaT3yYhLz/Y2zw=="
+    },
+    "@ngrok/ngrok-linux-x64-musl@0.5.2": {
+      "integrity": "sha512-33tt/nOTUm/QN1xx2jvqQpBSv5tOn2LrU0MXuvoTQFOOr0XwrlqaZguyFhdGoU5J5bPaecw5lfhZb2JH3zJliQ=="
+    },
+    "@ngrok/ngrok-win32-ia32-msvc@0.5.2": {
+      "integrity": "sha512-rJ4+JP6TrWYmw6iaUwQEKoTIxX7vKGWJh9b2RL0ZcRbb8FMTZWY9KoyogkxSZDfx4BuTz2kSe4AMqe5RRhFt6Q=="
+    },
+    "@ngrok/ngrok-win32-x64-msvc@0.5.2": {
+      "integrity": "sha512-FMdljqqhbilwoY0FLb8iEW3179WkAHwb3i2e3U/XrqTlO1nvF8hbjoWLesrLzAICY9wSH5mgqC7i6qxHAA1Neg=="
+    },
+    "@ngrok/ngrok@0.5.2": {
+      "integrity": "sha512-IDTLnK93UZlpiN0Ftr5aIXvMADioMEHFcydrvmP27kypHGmW5ww1883TWiASGTPUwBEVtnVqfUtCzbu+NRhyPQ==",
+      "dependencies": [
+        "@ngrok/ngrok-android-arm-eabi",
+        "@ngrok/ngrok-android-arm64",
+        "@ngrok/ngrok-darwin-arm64",
+        "@ngrok/ngrok-darwin-universal",
+        "@ngrok/ngrok-darwin-x64",
+        "@ngrok/ngrok-freebsd-x64",
+        "@ngrok/ngrok-linux-arm-gnueabihf",
+        "@ngrok/ngrok-linux-arm64-gnu",
+        "@ngrok/ngrok-linux-arm64-musl",
+        "@ngrok/ngrok-linux-x64-gnu",
+        "@ngrok/ngrok-linux-x64-musl",
+        "@ngrok/ngrok-win32-ia32-msvc",
+        "@ngrok/ngrok-win32-x64-msvc"
+      ]
+    },
     "@twurple/api-call@7.2.1": {
       "integrity": "sha512-x+p6fMleFA/pJHVu8tFpkDkARGGt30EAUA+cLc+dEtU1EpH1mv7nv5LLHh9NW9vdZpYp0jk5TyY/TSbHdj7Ggw==",
       "dependencies": [
@@ -280,6 +338,16 @@
         "@twurple/eventsub-base",
         "@types/express-serve-static-core",
         "httpanda",
+        "tslib"
+      ]
+    },
+    "@twurple/eventsub-ngrok@7.2.1_@twurple+api@7.2.1__@twurple+auth@7.2.1_@twurple+eventsub-http@7.2.1__@twurple+api@7.2.1___@twurple+auth@7.2.1__@twurple+auth@7.2.1_@twurple+auth@7.2.1": {
+      "integrity": "sha512-s7U6MS3iWBu4iLwHrNNoD8O4fN8P9QQxlxWNU9wPVeVWGNlXUOy2gNUEYh4QOnlwkquDrE+lWKfL2p10HUsueA==",
+      "dependencies": [
+        "@d-fischer/shared-utils",
+        "@ngrok/ngrok",
+        "@twurple/api",
+        "@twurple/eventsub-http",
         "tslib"
       ]
     },
@@ -441,6 +509,7 @@
       "npm:@twurple/chat@^7.2.1",
       "npm:@twurple/eventsub-base@^7.2.1",
       "npm:@twurple/eventsub-http@^7.2.1",
+      "npm:@twurple/eventsub-ngrok@^7.2.1",
       "npm:@types/node@^22.13.5"
     ]
   }

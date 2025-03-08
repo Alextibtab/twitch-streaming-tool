@@ -1,170 +1,130 @@
 import { getLogger } from "@std/log/get-logger";
-import { Context } from "@oak/oak";
-import { crypto } from "@std/crypto";
+import { Application } from "@oak/oak";
 import { ApiClient } from "@twurple/api";
-import type { Config } from "../config/config.ts";
-import type { WebSocketServer } from "../websocket/server.ts";
+import { 
+  EventSubHttpListener
+} from "@twurple/eventsub-http";
+import { NgrokAdapter } from "@twurple/eventsub-ngrok";
 
+import type { Config } from "../config/config.ts";
+import type { WebSocketServerInterface } from "../websocket/server.ts";
 import { logError } from "../utils/utils.ts";
 
 const logger = getLogger();
 
-interface EventSubNotification {
-  subscription: {
-    id: string;
-    type: string;
-    version: string;
-    status: string;
-    condition: Record<string, unknown>;
-    created_at: string;
-  };
-  event: Record<string, unknown>;
-}
-
 export class EventSubHandler {
   private config: Config;
-  private wss: WebSocketServer;
+  private wss: WebSocketServerInterface;
   private apiClient: ApiClient;
+  private listener: EventSubHttpListener;
   
-  constructor(config: Config, wss: WebSocketServer, apiClient: ApiClient) {
+  constructor(config: Config, wss: WebSocketServerInterface, apiClient: ApiClient) {
     this.config = config;
     this.wss = wss;
     this.apiClient = apiClient;
-  }
- 
-  handleEventSub = async (ctx: Context): Promise<void> => {
-    try {
-      const messageType = ctx.request.headers.get("Twitch-Eventsub-Message-Type");
-      const messageId = ctx.request.headers.get("Twitch-Eventsub-Message-Id");
-      const timestamp = ctx.request.headers.get("Twitch-Eventsub-Message-Timestamp");
-      const signature = ctx.request.headers.get("Twitch-Eventsub-Message-Signature");
-      
-      if (!this.verifySignature(ctx, signature)) {
-        ctx.response.status = 403;
-        ctx.response.body = { error: "Invalid signature" };
-        return;
-      }
-      
-      const body = await ctx.request.body().value;
-      
-      switch (messageType) {
-        case "webhook_callback_verification":
-          logger.info(`Received EventSub verification challenge`);
-          ctx.response.status = 200;
-          ctx.response.body = body.challenge;
-          break;
-          
-        case "notification":
-          logger.info(`Received EventSub notification: ${messageId}`);
-          await this.handleNotification(body);
-          ctx.response.status = 204; // No content, but acknowledged
-          break;
-          
-        case "revocation":
-          logger.warn(`EventSub subscription revoked: ${body.subscription?.id}`);
-          logger.warn(`Reason: ${body.subscription?.status}`);
-          ctx.response.status = 204;
-          break;
-          
-        default:
-          logger.warn(`Unknown EventSub message type: ${messageType}`);
-          ctx.response.status = 204;
-      }
-    } catch (error) {
-      logError(logger, 'Error handling EventSub webhook', error);
-      ctx.response.status = 500;
-      ctx.response.body = { error: "Internal server error" };
-    }
-  };
-  
-  private verifySignature(ctx: Context, signature: string | null): boolean {
-    if (!signature) {
-      return false;
-    }
     
+    const adapter = new NgrokAdapter({
+      ngrokAuthToken: config.ngrokAuthToken,
+      pathPrefix: '/eventsub'
+    });
+    
+    this.listener = new EventSubHttpListener({
+      apiClient,
+      adapter,
+      secret: this.config.eventSubSecret,
+      logger: {
+        debug: (msg) => logger.debug(msg),
+        info: (msg) => logger.info(msg),
+        warn: (msg) => logger.warn(msg),
+        error: (msg, error) => logError(logger, msg, error)
+      }
+    });
+  }
+  
+  /**
+   * Initialize the EventSub listener and subscribe to events
+   */
+  async initialize(app: Application): Promise<void> {
     try {
-      const body = ctx.request.body();
-      const messageId = ctx.request.headers.get("Twitch-Eventsub-Message-Id") || "";
-      const timestamp = ctx.request.headers.get("Twitch-Eventsub-Message-Timestamp") || "";
+      // Start the listener - this will start ngrok and create the tunnel
+      await this.listener.start();
       
-      // Create the message to verify
-      const message = messageId + timestamp + JSON.stringify(body);
+      // The NgrokAdapter automatically creates a tunnel and handles the HTTP requests
+      // We don't need to manually set up routes with Oak for this
+      logger.info("EventSub listener started");
       
-      // Create the expected signature
-      const encoder = new TextEncoder();
-      const key = encoder.encode(this.config.eventSubSecret);
-      const data = encoder.encode(message);
+      // Subscribe to channel point redemption events
+      await this.subscribeToEvents();
       
-      const hmacKey = crypto.subtle.importKey(
-        "raw",
-        key,
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["sign", "verify"]
+      logger.info("EventSub handler initialized successfully");
+    } catch (error) {
+      logError(logger, "Failed to initialize EventSub handler", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Subscribe to channel point redemption events
+   */
+  private async subscribeToEvents(): Promise<void> {
+    try {
+      // Get the broadcaster ID
+      const user = await this.apiClient.users.getUserByName(this.config.channelName);
+      if (!user) {
+        throw new Error(`Could not find user: ${this.config.channelName}`);
+      }
+      
+      const broadcasterId = user.id;
+      logger.info(`Subscribing to events for broadcaster: ${this.config.channelName} (${broadcasterId})`);
+      
+      // Subscribe to channel point redemptions
+      // This automatically handles verification and subscription management
+      const subscription = await this.listener.onChannelRedemptionAdd(
+        broadcasterId,
+        (event) => this.handleRewardRedemption(event)
       );
       
-      return true; // For demonstration - in production, do actual verification
+      logger.info(`Subscribed to channel point redemptions with ID: ${subscription.id}`);
     } catch (error) {
-      logError(logger, 'Error verifying signature', error);
-      return false;
+      logError(logger, "Failed to subscribe to events", error);
+      throw error;
     }
   }
-  
-  private async handleNotification(body: EventSubNotification): Promise<void> {
-    const subscriptionType = body.subscription.type;
-    const event = body.event;
-    
-    logger.info(`Processing notification for event type: ${subscriptionType}`);
-    
-    if (subscriptionType === "channel.channel_points_custom_reward_redemption.add") {
-      await this.handleRewardRedemption(event);
-    }
-  }
-  
-  private async handleRewardRedemption(event: Record<string, unknown>): Promise<void> {
-    try {
-      const rewardId = event.reward?.id as string;
-      const rewardTitle = event.reward?.title as string;
-      const userName = event.user_name as string;
-      const userInput = event.user_input as string || "";
-      
-      logger.info(`${userName} redeemed reward "${rewardTitle}" (${rewardId})`);
-      
-      let effectType = "";
-      let effectData = {};
-      
-      switch (rewardId) {
-        case this.config.rewards.digitalRain:
-          effectType = "shader";
-          effectData = { type: "digitalRain", intensity: 0.8 };
-          logger.info(`Triggering digitalRain shader effect`);
-          break;
 
-        case this.config.rewards.colourShift:
-          effectType = "colour";
-          effectData = { shift: true, duration: 5000 };
-          logger.info(`Triggering colour shift effect`);
-          break;
-          
-        default:
-          logger.info(`Unknown reward ID: ${rewardId}`);
-          return;
-      }
+  /**
+   * Handle channel point reward redemptions
+   */
+  private handleRewardRedemption(event) {
+    try {
+      // Log the event details
+      logger.info(`Reward redeemed: ${event.rewardTitle} by ${event.userDisplayName}`);
       
+      // Send the event to connected clients via WebSocket
       this.wss.broadcast({
-        type: effectType,
+        type: "reward_redeemed",
         data: {
-          ...effectData,
-          rewardId,
-          rewardTitle,
-          userName,
-          userInput,
+          rewardId: event.rewardId,
+          rewardTitle: event.rewardTitle,
+          userName: event.userDisplayName,
+          userInput: event.input || "",
           timestamp: new Date().toISOString()
         }
       });
-      
     } catch (error) {
       logError(logger, 'Error handling reward redemption', error);
+    }
+  }
+  
+  /**
+   * Clean up resources when shutting down
+   */
+  async shutdown(): Promise<void> {
+    try {
+      // Stop the listener - this will also stop ngrok
+      await this.listener.stop();
+      logger.info("EventSub listener stopped");
+    } catch (error) {
+      logError(logger, "Error shutting down EventSub listener", error);
     }
   }
 }
